@@ -1,14 +1,9 @@
 [package]
-name = "openpnp_capture"
+name = "openpnp_capture_sys"
 version = "0.1.0"
 authors = ["Christopher N. Hesse <raymanfx@gmail.com>"]
 edition = "2018"
 license = "MIT"
-
-[workspace]
-members = [
-    "sys"
-]
 
 [build-dependencies]
 bindgen = "^0.53"
