@@ -1,9 +1,11 @@
 [package]
 name = "openpnp_capture_sys"
+description = "OpenPnP capture FFI bindings"
 version = "0.1.0"
 authors = ["Christopher N. Hesse <raymanfx@gmail.com>"]
 edition = "2018"
 license = "MIT"
+repository= "https://github.com/raymanfx/openpnp-capture"
 
 [build-dependencies]
 bindgen = "^0.53"
