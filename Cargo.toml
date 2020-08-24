@@ -13,5 +13,9 @@ members = [
     "sys"
 ]
 
+[dependencies]
+lazy_static = "^1.4"
+openpnp_capture_sys = "^0.1"
+
 [build-dependencies]
 bindgen = "^0.53"

@@ -1,7 +1,7 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod context;
+
+pub mod format;
+pub use format::Format;
+
+pub mod device;
+pub use device::Device;
