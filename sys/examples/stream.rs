@@ -94,8 +94,7 @@ fn main() {
         }
 
         // Capture some frames
-        let mut rgb_buffer =
-            Vec::with_capacity((format.height * format.width * 3/* bpp */) as usize);
+        let mut rgb_buffer = vec![0u8; (format.height * format.width * 3/* bpp */) as usize];
 
         let start = std::time::Instant::now();
         for _i in 0..10 {
@@ -110,7 +109,7 @@ fn main() {
             let res = ffi::Cap_captureFrame(
                 context,
                 stream,
-                rgb_buffer.as_mut_ptr(),
+                rgb_buffer.as_mut_ptr() as *mut std::ffi::c_void,
                 rgb_buffer.len() as u32,
             );
             match res {
