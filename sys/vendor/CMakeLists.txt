@@ -59,7 +59,7 @@ endif(CMAKE_BUILD_TYPE MATCHES Release)
 include_directories(include)
 
 # create our capture library
-add_library(openpnp-capture SHARED common/libmain.cpp
+add_library(openpnp-capture STATIC common/libmain.cpp
                                    common/context.cpp
                                    common/logging.cpp
                                    common/stream.cpp)
@@ -86,7 +86,7 @@ IF (WIN32)
                                            win/platformstream.cpp)
 
     # add windows-specific test application
-    add_subdirectory(win/tests)
+    #add_subdirectory(win/tests)
 
 ELSEIF(APPLE)
     # set the platform identification string
@@ -107,7 +107,7 @@ ELSEIF(APPLE)
         )
 
     # add mac specific test application
-    add_subdirectory(mac/tests)
+    #add_subdirectory(mac/tests)
 
 ELSEIF(UNIX)
     # install path resolving
@@ -149,7 +149,7 @@ ELSEIF(UNIX)
     endif()
 
     # add linux-specific test application
-    add_subdirectory(linux/tests)
+    #add_subdirectory(linux/tests)
 
     # install lib and headers
     install(FILES include/openpnp-capture.h
