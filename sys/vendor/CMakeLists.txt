@@ -146,6 +146,8 @@ ELSEIF(UNIX)
         set(TurboJPEG_LIBRARIES turbojpeg-static)  
         add_subdirectory(linux/contrib/libjpeg-turbo-dev)
         target_link_libraries(openpnp-capture PRIVATE ${TurboJPEG_LIBRARIES})
+        # make the install rule happy
+        install(TARGETS turbojpeg-static EXPORT openpnp-capture)
     endif()
 
     # add linux-specific test application
