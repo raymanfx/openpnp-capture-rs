@@ -13,6 +13,9 @@ fn main() {
         // Compile the included library distribution
         let out = cmake::build("vendor");
 
+        // We built a C++ library, tell Rust to link the C++ stdlib
+        println!("cargo:rustc-flags=-l dylib=stdc++");
+
         // Tell cargo to link the static library
         println!(
             "cargo:rustc-link-search=native={}",
@@ -23,6 +26,7 @@ fn main() {
             out.join("lib64").display()
         );
         println!("cargo:rustc-link-lib=static=openpnp-capture");
+        println!("cargo:rustc-link-lib=static=turbojpeg");
     }
 
     // Tell cargo to invalidate the built crate whenever the wrapper changes
