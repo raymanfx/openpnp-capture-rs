@@ -146,8 +146,6 @@ ELSEIF(UNIX)
         set(TurboJPEG_LIBRARIES turbojpeg-static)  
         add_subdirectory(linux/contrib/libjpeg-turbo-dev)
         target_link_libraries(openpnp-capture PRIVATE ${TurboJPEG_LIBRARIES})
-        # make the install rule happy
-        install(TARGETS turbojpeg-static EXPORT openpnp-capture)
     endif()
 
     # add linux-specific test application
@@ -157,13 +155,8 @@ ELSEIF(UNIX)
     install(FILES include/openpnp-capture.h
             DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
             COMPONENT headers)
-    install(TARGETS openpnp-capture EXPORT openpnp-capture
+    install(TARGETS openpnp-capture
             DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            COMPONENT libraries)
-
-    # add cmake install target
-    install(EXPORT openpnp-capture
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/openpnp-capture
             COMPONENT libraries)
 
 ENDIF()
