@@ -34,6 +34,9 @@ set(CMAKE_CXX_STANDARD 11)
 # see: http://brianmilco.blogspot.nl/2012/11/cmake-automatically-use-git-tags-as.html
 include(GetGitRevisionDescription)
 
+# install path resolving
+include(GNUInstallDirs)
+
 # create library version from GIT tag using cmake/version.h.in as a template
 # and write it to common/version.h
 git_describe(GITVERSION --tags)
@@ -68,6 +71,14 @@ add_library(openpnp-capture STATIC common/libmain.cpp
 set_target_properties(openpnp-capture PROPERTIES
                       VERSION ${OPENPNP_CAPTURE_LIB_VERSION}
                       SOVERSION ${OPENPNP_CAPTURE_LIB_SOVERSION})
+
+# install lib and headers
+install(FILES include/openpnp-capture.h
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+        COMPONENT headers)
+install(TARGETS openpnp-capture
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        COMPONENT libraries)
 
 IF (WIN32)
 	# build with static runtime rather than DLL based so that we
@@ -110,9 +121,6 @@ ELSEIF(APPLE)
     #add_subdirectory(mac/tests)
 
 ELSEIF(UNIX)
-    # install path resolving
-    include(GNUInstallDirs)
-
     # set the platform identification string
     add_definitions(-D__PLATFORM__="Linux ${COMPILERBITS}")
 
@@ -150,14 +158,6 @@ ELSEIF(UNIX)
 
     # add linux-specific test application
     #add_subdirectory(linux/tests)
-
-    # install lib and headers
-    install(FILES include/openpnp-capture.h
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-            COMPONENT headers)
-    install(TARGETS openpnp-capture
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            COMPONENT libraries)
 
 ENDIF()
 
