@@ -79,10 +79,10 @@ impl FourCC {
 
     /// Returns the integer representation
     pub fn as_u32(&self) -> u32 {
-        return ((self.repr[3] as u32) << 24)
+        ((self.repr[3] as u32) << 24)
             | ((self.repr[2] as u32) << 16)
             | ((self.repr[1] as u32) << 8)
-            | self.repr[0] as u32;
+            | self.repr[0] as u32
     }
 }
 

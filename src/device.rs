@@ -86,11 +86,8 @@ impl Device {
                 bpp: 0,
             };
             let res = unsafe { ffi::Cap_getFormatInfo(context, self.index, i, &mut format) };
-            match res {
-                ffi::CAPRESULT_OK => {
-                    formats.push(format::Format::from(format));
-                }
-                _ => { /* skip */ }
+            if let ffi::CAPRESULT_OK = res {
+                formats.push(format::Format::from(format));
             }
         }
 

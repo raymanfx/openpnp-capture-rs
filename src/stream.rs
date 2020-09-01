@@ -34,7 +34,7 @@ impl Stream {
         // Look for the best format match
         let mut matched = (0, Format::default());
         let formats = dev.formats();
-        for i in 0..formats.len() {
+        for (i, fmt) in formats.iter().enumerate() {
             // We assume width and height are always set and take into account FPS and FourCC if
             // requested.
 
@@ -51,21 +51,20 @@ impl Stream {
                     (matched.1.fourcc.as_u32() as i64 - format.fourcc.as_u32() as i64).pow(2);
             }
 
-            let mut candidate = (formats[i].width as i64 - format.width as i64).pow(2)
-                + (formats[i].height as i64 - format.height as i64).pow(2);
+            let mut candidate = (fmt.width as i64 - format.width as i64).pow(2)
+                + (fmt.height as i64 - format.height as i64).pow(2);
             if format.fps > 0 {
                 // only penalize smaller fps values
-                if formats[i].fps < format.fps {
-                    candidate += (formats[i].fps as i64 - format.fps as i64).pow(2);
+                if fmt.fps < format.fps {
+                    candidate += (fmt.fps as i64 - format.fps as i64).pow(2);
                 }
             }
             if format.fourcc.as_u32() > 0 {
-                candidate +=
-                    (formats[i].fourcc.as_u32() as i64 - format.fourcc.as_u32() as i64).pow(2);
+                candidate += (fmt.fourcc.as_u32() as i64 - format.fourcc.as_u32() as i64).pow(2);
             }
 
             if candidate < current {
-                matched = (i as u32, formats[i]);
+                matched = (i as u32, *fmt);
             }
         }
 
