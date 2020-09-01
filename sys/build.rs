@@ -13,9 +13,6 @@ fn main() {
         // Compile the included library distribution
         let out = cmake::build("vendor");
 
-        // We built a C++ library, tell Rust to link the C++ stdlib
-        println!("cargo:rustc-flags=-l dylib=stdc++");
-
         // Tell cargo to link the static library
         println!(
             "cargo:rustc-link-search=native={}",
