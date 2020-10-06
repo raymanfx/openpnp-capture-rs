@@ -8,13 +8,13 @@ fn main() {
         // Tell cargo to tell rustc to link the system openpnp-capture shared
         // library and its dependencies
         println!("cargo:rustc-link-lib=openpnp-capture");
-        println!("cargo:rustc-link-lib=turbojpeg");
+
+        if env::consts::OS == "linux" {
+            println!("cargo:rustc-link-lib=turbojpeg");
+        }
     } else if env::var("CARGO_FEATURE_VENDOR").is_ok() {
         // Compile the included library distribution
         let out = cmake::build("vendor");
-
-        // We built a C++ library, tell Rust to link the C++ stdlib
-        println!("cargo:rustc-flags=-l dylib=stdc++");
 
         // Tell cargo to link the static library
         println!(
@@ -26,7 +26,25 @@ fn main() {
             out.join("lib64").display()
         );
         println!("cargo:rustc-link-lib=static=openpnp-capture");
-        println!("cargo:rustc-link-lib=static=turbojpeg");
+
+        if env::consts::OS == "linux" {
+            // We built a C++ library, tell Rust to link the C++ stdlib
+            println!("cargo:rustc-flags=-l dylib=stdc++");
+
+            println!("cargo:rustc-link-lib=static=turbojpeg");
+        }
+
+        if env::consts::OS == "macos" {
+            // We built a C++ library, tell Rust to link the C++ stdlib
+            println!("cargo:rustc-flags=-lc++");
+
+            println!("cargo:rustc-link-lib=framework=AVFoundation");
+            println!("cargo:rustc-link-lib=framework=Foundation");
+            println!("cargo:rustc-link-lib=framework=CoreMedia");
+            println!("cargo:rustc-link-lib=framework=CoreVideo");
+            println!("cargo:rustc-link-lib=framework=Accelerate");
+            println!("cargo:rustc-link-lib=framework=IOKit");
+        }
     }
 
     // Tell cargo to invalidate the built crate whenever the wrapper changes
