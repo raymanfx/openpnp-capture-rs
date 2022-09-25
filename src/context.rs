@@ -4,7 +4,7 @@ use std::sync::Mutex;
 
 #[derive(Debug)]
 /// Library context
-pub(crate) struct Context {
+pub struct Context {
     pub inner: ffi::CapContext,
 }
 
@@ -28,5 +28,5 @@ impl Drop for Context {
 unsafe impl Send for Context {}
 
 lazy_static! {
-    pub(crate) static ref CONTEXT: Mutex<Context> = Mutex::new(Context::default());
+    pub static ref CONTEXT: Mutex<Context> = Mutex::new(Context::default());
 }
