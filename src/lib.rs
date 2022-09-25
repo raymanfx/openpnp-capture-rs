@@ -1,4 +1,4 @@
-mod context;
+pub mod context;
 
 pub mod format;
 pub use format::Format;
