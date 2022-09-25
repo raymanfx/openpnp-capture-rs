@@ -1,7 +1,7 @@
 [package]
 name = "openpnp_capture"
 description = "OpenPnP capture safe bindings"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Christopher N. Hesse <raymanfx@gmail.com>"]
 edition = "2018"
 license = "MIT"
