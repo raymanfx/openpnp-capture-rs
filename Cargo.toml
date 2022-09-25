@@ -15,4 +15,4 @@ members = [
 
 [dependencies]
 lazy_static = "^1.4"
-openpnp_capture_sys = "^0.3"
+openpnp_capture_sys = "^0.4"
