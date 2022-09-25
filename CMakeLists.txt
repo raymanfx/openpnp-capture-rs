@@ -12,8 +12,8 @@
 
 cmake_minimum_required(VERSION 3.1)
 project (openpnp-capture)
-set(OPENPNP_CAPTURE_LIB_VERSION "0.0.20" CACHE STRING "openpnp-capture library version")
-set(OPENPNP_CAPTURE_LIB_SOVERSION "0.0.20" CACHE STRING "openpnp-capture library soversion")
+set(OPENPNP_CAPTURE_LIB_VERSION "0.0.23" CACHE STRING "openpnp-capture library version")
+set(OPENPNP_CAPTURE_LIB_SOVERSION "0.0.23" CACHE STRING "openpnp-capture library soversion")
 
 # make sure the libjpegturbo is compiled with the
 # position independent flag -fPIC
@@ -70,10 +70,12 @@ set_target_properties(openpnp-capture PROPERTIES
                       SOVERSION ${OPENPNP_CAPTURE_LIB_SOVERSION})
 
 IF (WIN32)
-	# build with static runtime rather than DLL based so that we
-	# don't have to distribute it
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    if(MSVC)
+        # build with static runtime rather than DLL based so that we
+        # don't have to distribute it
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+        set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd")
+    endif()
 
     # set the platform identification string
     add_definitions(-D__PLATFORM__="Win ${COMPILERBITS}")
@@ -84,6 +86,7 @@ IF (WIN32)
     # add files for WIN32
     target_sources(openpnp-capture PRIVATE win/platformcontext.cpp
                                            win/platformstream.cpp)
+    target_link_libraries(openpnp-capture strmiids)
 
     # add windows-specific test application
     add_subdirectory(win/tests)

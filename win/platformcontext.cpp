@@ -32,6 +32,9 @@
 #include <vector>
 #include <stdio.h>
 
+#include <windows.h>
+#include <mmsystem.h> // for MAKEFOURCC macro
+
 #include "../common/logging.h"
 #include "scopedcomptr.h"
 #include "platformstream.h"
@@ -94,7 +97,7 @@ bool PlatformContext::enumerateDevices()
 
     ScopedComPtr<ICreateDevEnum> devEnum(dev_enum);
 
-	hr = devEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory,&enum_moniker,NULL);
+	hr = devEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory,&enum_moniker, 0);
 	if (hr == S_FALSE)
     {
         // no devices found!
@@ -116,7 +119,6 @@ bool PlatformContext::enumerateDevices()
 	{
 		//get properties
 		hr = moniker->BindToStorage(0, 0, IID_IPropertyBag, (void**) &pbag);
-        ScopedComPtr<IPropertyBag> propertyBag(pbag);
 
 		if (hr >= 0)
 		{            
@@ -124,8 +126,8 @@ bool PlatformContext::enumerateDevices()
 			VariantInit(&name);
 
 			//get the description
-			hr = propertyBag->Read(L"Description", &name, 0);
-			if (hr < 0) hr = propertyBag->Read(L"FriendlyName", &name, 0);
+			hr = pbag->Read(L"Description", &name, 0);
+			if (hr < 0) hr = pbag->Read(L"FriendlyName", &name, 0);
 			if (hr >= 0)
 			{
 				BSTR BStringPtr = name.bstrVal;
@@ -146,32 +148,38 @@ bool PlatformContext::enumerateDevices()
                 LOG(LOG_ERR, "Could not generate device name for device!\n");
             }
 
-            hr = propertyBag->Read(L"DevicePath", &name, 0);
-			if (hr >= 0)
-			{
-        		BSTR BStringPtr = name.bstrVal;            
-                if (BStringPtr)
-                {
-                    info->m_devicePath = std::wstring(BStringPtr);
-                    info->m_uniqueID.append(" ");
-                    info->m_uniqueID.append(wcharPtrToString(BStringPtr));
-                    LOG(LOG_INFO, "     -> PATH %s\n", wcharPtrToString(BStringPtr).c_str());
-                } 
-                else
-                {
-                    LOG(LOG_WARNING, "     device path not found!");  
-                }
+            hr = pbag->Read(L"DevicePath", &name, 0);
+            if (hr >= 0 && name.bstrVal)
+            {
+                info->m_devicePath = std::wstring(name.bstrVal);
+            }
+            else {
+                LOG(LOG_WARNING, "     device path not found! fallback to using device index...\n");
+                info->m_devicePath = std::to_wstring(num_devices);
             }
 
+            info->m_uniqueID.append(" ");
+            info->m_uniqueID.append(wstringToString(info->m_devicePath));
+            LOG(LOG_INFO, "     -> PATH %s\n", wstringToString(info->m_devicePath).c_str());
+
             enumerateFrameInfo(moniker, info);
-
-            moniker->AddRef();
-            info->m_moniker = moniker;
             m_devices.push_back(info);
-            LOG(LOG_INFO, "ID %d -> %s\n", num_devices, info->m_name.c_str());            
-        }
 
-        num_devices++;
+            LOG(LOG_INFO, "ID %d -> %s\n", num_devices, info->m_name.c_str());
+
+            VariantClear(&name);
+
+            pbag->Release();
+            pbag = nullptr;
+
+            moniker->Release();
+            moniker = nullptr;
+
+            num_devices++; 
+        }
+        else{
+            moniker->Release();
+        }
     }
     return true;
 }
@@ -185,13 +193,13 @@ std::string PlatformContext::wstringToString(const std::wstring &wstr)
 std::string PlatformContext::wcharPtrToString(const wchar_t *sstr)
 {
     std::vector<char> buffer;
-    int32_t chars = WideCharToMultiByte(CP_UTF8, 0, sstr, -1, nullptr, 0, nullptr, nullptr);    
+    int32_t chars = WideCharToMultiByte(CP_UTF8, 0, sstr, -1, nullptr, 0, nullptr, nullptr);
     if (chars == 0) return std::string("");
 
     buffer.resize(chars);
     WideCharToMultiByte(CP_UTF8, 0, sstr, -1, &buffer[0], chars, nullptr, nullptr);
     return std::string(&buffer[0]);
-} 
+}
 
 
 // Release the format block for a media type.
@@ -216,7 +224,7 @@ void _DeleteMediaType(AM_MEDIA_TYPE *pmt)
 {
     if (pmt != NULL)
     {
-        _FreeMediaType(*pmt); 
+        _FreeMediaType(*pmt);
         CoTaskMemFree(pmt);
     }
 }
@@ -231,7 +239,7 @@ bool PinMatchesCategory(IPin *pPin, REFGUID Category)
     {
         GUID PinCategory;
         DWORD cbReturned;
-        hr = pKs->Get(AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY, NULL, 0, 
+        hr = pKs->Get(AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY, NULL, 0,
             &PinCategory, sizeof(GUID), &cbReturned);
         if (SUCCEEDED(hr) && (cbReturned == sizeof(GUID)))
         {
@@ -275,7 +283,7 @@ HRESULT FindPinByCategory(
 
         ScopedComPtr<IPin> myPin(pPin);
 
-        if ((ThisPinDir == PinDir) && 
+        if ((ThisPinDir == PinDir) &&
             PinMatchesCategory(pPin, Category))
         {
             *ppPin = pPin;
@@ -310,7 +318,7 @@ bool PlatformContext::enumerateFrameInfo(IMoniker *moniker, platformDeviceInfo *
         LOG(LOG_ERR, "No frame information: EnumPins failed.\n");
         return false;
     }
-
+    ScopedComPtr<IEnumPins> pinEnum(pEnum);
     if (FindPinByCategory(pCap, PINDIR_OUTPUT, PIN_CATEGORY_CAPTURE, &pPin) == S_OK)
     {
         LOG(LOG_INFO, "Capture pin found!\n");
@@ -363,11 +371,11 @@ bool PlatformContext::enumerateFrameInfo(IMoniker *moniker, platformDeviceInfo *
                             newFrameInfo.bpp = pVih->bmiHeader.biBitCount;
                             if (pVih->bmiHeader.biCompression == BI_RGB)
                             {
-                                newFrameInfo.fourcc = 'RGB ';
+                                newFrameInfo.fourcc = MAKEFOURCC('R', 'G', 'B', ' ');
                             }
                             else if (pVih->bmiHeader.biCompression == BI_BITFIELDS)
                             {
-                                newFrameInfo.fourcc = '   ';
+                                newFrameInfo.fourcc = MAKEFOURCC(' ', ' ', ' ', ' ');
                             }
                             else
                             {
@@ -376,7 +384,7 @@ bool PlatformContext::enumerateFrameInfo(IMoniker *moniker, platformDeviceInfo *
 
                             newFrameInfo.width  = pVih->bmiHeader.biWidth;
                             newFrameInfo.height = pVih->bmiHeader.biHeight;
-                            
+
                             if (pVih->AvgTimePerFrame != 0)
                             {
                                 // pVih->AvgTimePerFrame is in units of 100ns
@@ -386,10 +394,10 @@ bool PlatformContext::enumerateFrameInfo(IMoniker *moniker, platformDeviceInfo *
                             {
                                 newFrameInfo.fps = 0;
                             }
-                            
+
                             std::string fourCCString = fourCCToString(newFrameInfo.fourcc);
 
-                            LOG(LOG_INFO, "%d x %d  %d fps  %d bpp FOURCC=%s\n", newFrameInfo.width, newFrameInfo.height, 
+                            LOG(LOG_INFO, "%d x %d  %d fps  %d bpp FOURCC=%s\n", newFrameInfo.width, newFrameInfo.height,
                                 newFrameInfo.fps, newFrameInfo.bpp, fourCCString.c_str());
 
                             info->m_formats.push_back(newFrameInfo);
@@ -404,3 +412,53 @@ bool PlatformContext::enumerateFrameInfo(IMoniker *moniker, platformDeviceInfo *
 
     return true;
 }
+
+
+HRESULT FindCaptureDevice(IBaseFilter** ppSrcFilter, const wchar_t* devicePath)
+{
+    HRESULT hr = S_OK;
+
+    std::wstring strDevicePath = devicePath;
+
+    ICreateDevEnum* pDevEnum = nullptr;
+    hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&pDevEnum));
+    if (FAILED(hr)) {
+        return hr;
+    }
+    ScopedComPtr<ICreateDevEnum> devEnum(pDevEnum);
+
+    IEnumMoniker* pEnumMoniker = nullptr;
+    hr = devEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumMoniker, 0);
+    if(FAILED(hr)) {
+        return hr;
+    }
+    ScopedComPtr<IEnumMoniker> enumMoniker(pEnumMoniker);
+
+    IMoniker* pMoniker = nullptr;
+    for(int num_devices = 0; enumMoniker->Next(1, &pMoniker, 0) == S_OK; ++num_devices)
+    {
+        ScopedComPtr<IMoniker> moniker(pMoniker);
+
+        IPropertyBag* pbag = nullptr;
+        hr = moniker->BindToStorage(0, 0, IID_PPV_ARGS(&pbag));
+        if(FAILED(hr)) {
+            continue;  // Skip this one, maybe the next one will work.
+        }
+        ScopedComPtr<IPropertyBag> propertyBag(pbag);
+
+        VARIANT varName;
+        VariantInit(&varName);
+        hr = pbag->Read(L"DevicePath", &varName, 0);
+        if ((SUCCEEDED(hr) && strDevicePath == varName.bstrVal) ||
+            (FAILED(hr) && strDevicePath == std::to_wstring(num_devices))) {
+            VariantClear(&varName);
+            hr = pMoniker->BindToObject(0, 0, IID_PPV_ARGS(ppSrcFilter));
+            pMoniker->Release();
+            return hr;
+        }
+        VariantClear(&varName);
+    }
+
+    return E_FAIL;
+}
+
