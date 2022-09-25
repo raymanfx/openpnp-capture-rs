@@ -83,6 +83,11 @@ impl Stream {
         }
     }
 
+    /// Returns the stream id
+    pub fn id(&self) -> i32 {
+        self.id
+    }
+
     /// Returns the format in use
     pub fn format(&self) -> Format {
         self.format
